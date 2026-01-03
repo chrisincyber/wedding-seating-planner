@@ -127,9 +127,15 @@
             color: #667eea;
         }
 
+        h2, h3 {
+            color: var(--text-primary);
+        }
+
         .tab-content {
             display: none;
             padding: 30px;
+            background: var(--bg-primary);
+            transition: background 0.3s ease;
         }
 
         .tab-content.active {
@@ -505,7 +511,7 @@
         .table-list-guest.other { border-left-color: #b2bec3; }
 
         .table-list-empty {
-            color: #999;
+            color: var(--text-light);
             font-style: italic;
             font-size: 12px;
         }
