@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Seating Planner - Floor Plan Designer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Setup Section Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="number"], input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .guest-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .guest-row input {
+            flex: 2;
+        }
+
+        .guest-row select {
+            flex: 1;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #48dbfb;
+        }
+
+        .btn-danger {
+            background: #ff4757;
+        }
+
+        .remove-btn {
+            background: #ff4757;
+            padding: 12px 20px;
+        }
+
+        /* Floor Plan Styles */
+        .floor-plan-container {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            gap: 20px;
+            height: 70vh;
+            min-height: 500px;
+        }
+
+        .tools-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-y: auto;
+        }
+
+        .tools-panel h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .tool-btn {
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: white;
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 16 / 9;
+            height: 100%;
+        }
+
+        #floorPlanCanvas {
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            cursor: crosshair;
+            position: relative;
+        }
+
+        #assignmentCanvas {
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0,0,0,.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: relative;
+        }
+
+        .guests-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-y: auto;
+        }
+
+        .guests-panel h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .guest-card {
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: move;
+            border-left: 4px solid;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-size: 14px;
+        }
+
+        .guest-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .guest-card.dragging {
+            opacity: 0.5;
+        }
+
+        .guest-card.family { border-left-color: #fdcb6e; }
+        .guest-card.close-friends { border-left-color: #74b9ff; }
+        .guest-card.friends { border-left-color: #a29bfe; }
+        .guest-card.colleagues { border-left-color: #fd79a8; }
+        .guest-card.other { border-left-color: #b2bec3; }
+
+        .table-shape-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .shape-option {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .shape-option:hover {
+            border-color: #667eea;
+        }
+
+        .shape-option.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .table-element {
+            position: absolute;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+            border: 3px solid #667eea;
+            border-radius: 8px;
+            cursor: move;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .table-element.round {
+            border-radius: 50%;
+        }
+
+        .table-element.selected {
+            border-color: #ff4757;
+            box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.3);
+        }
+
+        .table-element:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .table-label {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .table-capacity {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .table-guests-list {
+            font-size: 11px;
+            color: #333;
+            margin-top: 5px;
+            max-height: 60px;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .table-guest-item {
+            padding: 2px 5px;
+            background: white;
+            margin: 2px 0;
+            border-radius: 3px;
+            border-left: 3px solid;
+        }
+
+        .stats {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .categories {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .category-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .cat-family { background: #ffeaa7; color: #2d3436; }
+        .cat-close-friends { background: #74b9ff; color: #2d3436; }
+        .cat-friends { background: #a29bfe; color: white; }
+        .cat-colleagues { background: #fd79a8; color: white; }
+        .cat-other { background: #dfe6e9; color: #2d3436; }
+
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .controls-row input {
+            flex: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .floor-plan-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💒 Wedding Seating Planner</h1>
+            <p>Design your perfect floor plan and seating arrangement</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">1. Add Guests</div>
+            <div class="tab" onclick="switchTab(1)">2. Design Floor Plan</div>
+            <div class="tab" onclick="switchTab(2)">3. Assign Seats</div>
+        </div>
+
+        <!-- Tab 1: Guest Setup -->
+        <div class="tab-content active" id="tab1">
+            <h2 style="margin-bottom: 20px;">Add Your Guests</h2>
+            
+            <div class="form-group">
+                <label>Guest Categories:</label>
+                <div class="categories">
+                    <span class="category-badge cat-family">Family</span>
+                    <span class="category-badge cat-close-friends">Close Friends</span>
+                    <span class="category-badge cat-friends">Friends</span>
+                    <span class="category-badge cat-colleagues">Colleagues</span>
+                    <span class="category-badge cat-other">Other</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Add Guests:</label>
+                <div id="guestInputs"></div>
+                <button class="btn-secondary" onclick="addGuestRow()">+ Add Guest</button>
+            </div>
+
+            <button onclick="saveGuestsAndContinue()">Continue to Floor Plan →</button>
+        </div>
+
+        <!-- Tab 2: Floor Plan Design -->
+        <div class="tab-content" id="tab2">
+            <h2 style="margin-bottom: 20px;">Design Your Floor Plan</h2>
+            
+            <div class="floor-plan-container">
+                <div class="tools-panel">
+                    <h3>Table Tools</h3>
+                    
+                    <div class="form-group">
+                        <label>Table Shape:</label>
+                        <div class="table-shape-selector">
+                            <div class="shape-option active" data-shape="round" onclick="selectShape('round')">
+                                <div style="font-size: 24px;">⭕</div>
+                                <div style="font-size: 11px;">Round</div>
+                            </div>
+                            <div class="shape-option" data-shape="square" onclick="selectShape('square')">
+                                <div style="font-size: 24px;">⬜</div>
+                                <div style="font-size: 11px;">Square</div>
+                            </div>
+                            <div class="shape-option" data-shape="rectangle" onclick="selectShape('rectangle')">
+                                <div style="font-size: 24px;">▬</div>
+                                <div style="font-size: 11px;">Rectangle</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Seats per Table:</label>
+                        <input type="number" id="seatsPerTable" min="2" max="20" value="8">
+                    </div>
+
+                    <button class="tool-btn" onclick="addTableToCanvas()">
+                        ➕ Add Table
+                    </button>
+
+                    <button class="tool-btn btn-danger" onclick="deleteSelectedTable()">
+                        🗑️ Delete Selected
+                    </button>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+
+                    <div class="form-group">
+                        <label>Quick Add:</label>
+                        <div class="controls-row">
+                            <input type="number" id="quickAddCount" min="1" max="50" value="5" placeholder="# of tables">
+                        </div>
+                        <button class="tool-btn btn-secondary" onclick="quickAddTables()">
+                            Add Multiple Tables
+                        </button>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Tables</div>
+                            <div class="stat-value" id="tableCountStat">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Total Seats</div>
+                            <div class="stat-value" id="totalSeatsStat">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="canvas-container">
+                    <div id="floorPlanCanvas"></div>
+                </div>
+
+                <div class="tools-panel">
+                    <h3>Instructions</h3>
+                    <p style="font-size: 13px; line-height: 1.6; color: #666;">
+                        <strong>Add Tables:</strong> Select shape and seats, then click "Add Table"<br><br>
+                        <strong>Move Tables:</strong> Drag tables to position them on your floor plan<br><br>
+                        <strong>Delete Tables:</strong> Click a table to select it, then click "Delete Selected"<br><br>
+                        <strong>Quick Setup:</strong> Use "Add Multiple Tables" for faster layout
+                    </p>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="switchTab(0)">← Back to Guests</button>
+                <button onclick="switchTab(2)">Continue to Seat Assignment →</button>
+                <button class="btn-secondary" onclick="saveToFile()">💾 Save Progress</button>
+                <button class="btn-secondary" onclick="document.getElementById('loadFile').click()">📂 Load Progress</button>
+                <input type="file" id="loadFile" accept=".json" style="display: none;" onchange="loadFromFile(event)">
+            </div>
+        </div>
+
+        <!-- Tab 3: Seat Assignment -->
+        <div class="tab-content" id="tab3">
+            <h2 style="margin-bottom: 20px;">Assign Guests to Tables</h2>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Total Guests</div>
+                    <div class="stat-value" id="totalGuestsStat">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Assigned</div>
+                    <div class="stat-value" id="assignedGuestsStat">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Unassigned</div>
+                    <div class="stat-value" id="unassignedGuestsStat">0</div>
+                </div>
+            </div>
+
+            <div class="floor-plan-container">
+                <div class="guests-panel">
+                    <h3>Unassigned Guests</h3>
+                    <div id="unassignedGuestsList"></div>
+                </div>
+
+                <div class="canvas-container">
+                    <div id="assignmentCanvas"></div>
+                </div>
+
+                <div class="tools-panel">
+                    <h3>Instructions</h3>
+                    <p style="font-size: 13px; line-height: 1.6; color: #666; margin-bottom: 15px;">
+                        <strong>Assign Guests:</strong> Drag guests from the left panel onto tables<br><br>
+                        <strong>Move Between Tables:</strong> Drag guests from one table to another<br><br>
+                        <strong>Unassign:</strong> Drag guests back to the left panel
+                    </p>
+
+                    <button class="tool-btn btn-secondary" onclick="autoAssignGuests()">
+                        ✨ Auto-Assign by Category
+                    </button>
+
+                    <button class="tool-btn btn-danger" onclick="clearAllAssignments()">
+                        🔄 Clear All Assignments
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="switchTab(1)">← Back to Floor Plan</button>
+                <button class="btn-secondary" onclick="saveToFile()">💾 Save Progress</button>
+                <button class="btn-secondary" onclick="document.getElementById('loadFile2').click()">📂 Load Progress</button>
+                <button class="btn-secondary" onclick="exportAsImage()">📸 Export as Image</button>
+                <input type="file" id="loadFile2" accept=".json" style="display: none;" onchange="loadFromFile(event)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let guests = [];
+        let tables = [];
+        let selectedShape = 'round';
+        let selectedTable = null;
+        let draggedGuest = null;
+        let isDraggingTable = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        // Initialize
+        for (let i = 0; i < 5; i++) {
+            addGuestRow();
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+
+            if (index === 2) {
+                renderAssignmentView();
+            }
+        }
+
+        function addGuestRow() {
+            const container = document.getElementById('guestInputs');
+            const row = document.createElement('div');
+            row.className = 'guest-row';
+            row.innerHTML = `
+                <input type="text" placeholder="Guest name" class="guest-name">
+                <select class="guest-category">
+                    <option value="family">Family</option>
+                    <option value="close-friends">Close Friends</option>
+                    <option value="friends">Friends</option>
+                    <option value="colleagues">Colleagues</option>
+                    <option value="other">Other</option>
+                </select>
+                <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function saveGuestsAndContinue() {
+            guests = [];
+            const rows = document.querySelectorAll('.guest-row');
+            rows.forEach((row, index) => {
+                const name = row.querySelector('.guest-name').value.trim();
+                const category = row.querySelector('.guest-category').value;
+                if (name) {
+                    guests.push({
+                        id: 'guest_' + Date.now() + '_' + index,
+                        name: name,
+                        category: category,
+                        tableId: null
+                    });
+                }
+            });
+
+            if (guests.length === 0) {
+                alert('Please add at least one guest!');
+                return;
+            }
+
+            switchTab(1);
+        }
+
+        function selectShape(shape) {
+            selectedShape = shape;
+            document.querySelectorAll('.shape-option').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.shape === shape);
+            });
+        }
+
+        function addTableToCanvas() {
+            const seats = parseInt(document.getElementById('seatsPerTable').value);
+            const canvas = document.getElementById('floorPlanCanvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            const table = {
+                id: 'table_' + Date.now(),
+                shape: selectedShape,
+                seats: seats,
+                x: 50 + (tables.length * 150) % (canvasRect.width - 200), // Spread horizontally
+                y: 50 + Math.floor((tables.length * 150) / (canvasRect.width - 200)) * 150,
+                width: selectedShape === 'rectangle' ? 180 : 120,
+                height: selectedShape === 'rectangle' ? 80 : 120,
+                guests: []
+            };
+
+            tables.push(table);
+            renderTable(table);
+            updateStats();
+        }
+
+        function renderTable(table) {
+            const canvas = document.getElementById('floorPlanCanvas');
+            const tableDiv = document.createElement('div');
+            tableDiv.className = 'table-element ' + table.shape;
+            tableDiv.id = table.id;
+            tableDiv.style.left = table.x + 'px';
+            tableDiv.style.top = table.y + 'px';
+            tableDiv.style.width = table.width + 'px';
+            tableDiv.style.height = table.height + 'px';
+
+            const tableNumber = tables.findIndex(t => t.id === table.id) + 1;
+            tableDiv.innerHTML = `
+                <div class="table-label">Table ${tableNumber}</div>
+                <div class="table-capacity">${table.guests.length}/${table.seats} seats</div>
+            `;
+
+            // Make draggable
+            tableDiv.addEventListener('mousedown', (e) => {
+                if (e.target === tableDiv || e.target.classList.contains('table-label') || e.target.classList.contains('table-capacity')) {
+                    isDraggingTable = true;
+                    selectedTable = table.id;
+                    const rect = tableDiv.getBoundingClientRect();
+                    dragOffset.x = e.clientX - rect.left;
+                    dragOffset.y = e.clientY - rect.top;
+                    
+                    // Highlight selected table
+                    document.querySelectorAll('.table-element').forEach(t => t.classList.remove('selected'));
+                    tableDiv.classList.add('selected');
+                }
+            });
+
+            canvas.appendChild(tableDiv);
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingTable && selectedTable) {
+                const table = tables.find(t => t.id === selectedTable);
+                const canvas = document.getElementById('floorPlanCanvas');
+                const canvasRect = canvas.getBoundingClientRect();
+                
+                table.x = e.clientX - canvasRect.left - dragOffset.x;
+                table.y = e.clientY - canvasRect.top - dragOffset.y;
+
+                // Constrain to canvas
+                table.x = Math.max(0, Math.min(table.x, canvasRect.width - table.width));
+                table.y = Math.max(0, Math.min(table.y, canvasRect.height - table.height));
+
+                const tableDiv = document.getElementById(table.id);
+                tableDiv.style.left = table.x + 'px';
+                tableDiv.style.top = table.y + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDraggingTable = false;
+        });
+
+        function deleteSelectedTable() {
+            if (!selectedTable) {
+                alert('Please select a table first by clicking on it');
+                return;
+            }
+
+            const table = tables.find(t => t.id === selectedTable);
+            if (table && table.guests.length > 0) {
+                if (!confirm('This table has guests assigned. Are you sure you want to delete it?')) {
+                    return;
+                }
+                // Unassign guests
+                table.guests.forEach(guestId => {
+                    const guest = guests.find(g => g.id === guestId);
+                    if (guest) guest.tableId = null;
+                });
+            }
+
+            tables = tables.filter(t => t.id !== selectedTable);
+            document.getElementById(selectedTable)?.remove();
+            selectedTable = null;
+            updateStats();
+        }
+
+        function quickAddTables() {
+            const count = parseInt(document.getElementById('quickAddCount').value);
+            const seats = parseInt(document.getElementById('seatsPerTable').value);
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => addTableToCanvas(), i * 50);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('tableCountStat').textContent = tables.length;
+            const totalSeats = tables.reduce((sum, t) => sum + t.seats, 0);
+            document.getElementById('totalSeatsStat').textContent = totalSeats;
+        }
+
+        // Assignment View
+        function renderAssignmentView() {
+            const canvas = document.getElementById('assignmentCanvas');
+            canvas.innerHTML = '';
+
+            // Render all tables
+            tables.forEach(table => {
+                const tableDiv = document.createElement('div');
+                tableDiv.className = 'table-element ' + table.shape;
+                tableDiv.id = 'assign_' + table.id;
+                tableDiv.style.left = table.x + 'px';
+                tableDiv.style.top = table.y + 'px';
+                tableDiv.style.width = table.width + 'px';
+                tableDiv.style.height = table.height + 'px';
+
+                const tableNumber = tables.findIndex(t => t.id === table.id) + 1;
+                const assignedGuests = guests.filter(g => g.tableId === table.id);
+                
+                let guestsList = '';
+                assignedGuests.forEach(guest => {
+                    guestsList += `<div class="table-guest-item ${guest.category}" draggable="true" data-guest-id="${guest.id}">${guest.name}</div>`;
+                });
+
+                tableDiv.innerHTML = `
+                    <div class="table-label">Table ${tableNumber}</div>
+                    <div class="table-capacity">${assignedGuests.length}/${table.seats}</div>
+                    <div class="table-guests-list">${guestsList}</div>
+                `;
+
+                // Allow dropping
+                tableDiv.addEventListener('dragover', handleDragOver);
+                tableDiv.addEventListener('drop', (e) => handleDrop(e, table.id));
+                tableDiv.addEventListener('dragleave', handleDragLeave);
+
+                // Make guests draggable
+                tableDiv.querySelectorAll('.table-guest-item').forEach(item => {
+                    item.addEventListener('dragstart', handleGuestDragStart);
+                    item.addEventListener('dragend', handleGuestDragEnd);
+                });
+
+                canvas.appendChild(tableDiv);
+            });
+
+            renderUnassignedGuests();
+            updateAssignmentStats();
+        }
+
+        function renderUnassignedGuests() {
+            const container = document.getElementById('unassignedGuestsList');
+            const unassigned = guests.filter(g => g.tableId === null);
+            
+            container.innerHTML = unassigned.map(guest => `
+                <div class="guest-card ${guest.category}" draggable="true" data-guest-id="${guest.id}">
+                    ${guest.name}
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.guest-card').forEach(card => {
+                card.addEventListener('dragstart', handleGuestDragStart);
+                card.addEventListener('dragend', handleGuestDragEnd);
+            });
+        }
+
+        function handleGuestDragStart(e) {
+            draggedGuest = e.target.dataset.guestId;
+            e.target.classList.add('dragging');
+        }
+
+        function handleGuestDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e, tableId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+
+            const table = tables.find(t => t.id === tableId);
+            const guest = guests.find(g => g.id === draggedGuest);
+
+            if (!table || !guest) return;
+
+            // Check if table is full
+            const currentGuests = guests.filter(g => g.tableId === tableId);
+            if (currentGuests.length >= table.seats && guest.tableId !== tableId) {
+                alert(`Table ${tables.indexOf(table) + 1} is full!`);
+                return;
+            }
+
+            // Assign guest to table
+            guest.tableId = tableId;
+            renderAssignmentView();
+        }
+
+        // Allow dropping on unassigned area
+        document.getElementById('unassignedGuestsList').addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        document.getElementById('unassignedGuestsList').addEventListener('drop', (e) => {
+            e.preventDefault();
+            const guest = guests.find(g => g.id === draggedGuest);
+            if (guest) {
+                guest.tableId = null;
+                renderAssignmentView();
+            }
+        });
+
+        function updateAssignmentStats() {
+            const assigned = guests.filter(g => g.tableId !== null).length;
+            document.getElementById('totalGuestsStat').textContent = guests.length;
+            document.getElementById('assignedGuestsStat').textContent = assigned;
+            document.getElementById('unassignedGuestsStat').textContent = guests.length - assigned;
+        }
+
+        function autoAssignGuests() {
+            // Group by category
+            const categories = ['family', 'close-friends', 'friends', 'colleagues', 'other'];
+            let tableIndex = 0;
+
+            // Reset all
+            guests.forEach(g => g.tableId = null);
+
+            categories.forEach(category => {
+                const categoryGuests = guests.filter(g => g.category === category);
+                
+                categoryGuests.forEach(guest => {
+                    while (tableIndex < tables.length) {
+                        const table = tables[tableIndex];
+                        const assigned = guests.filter(g => g.tableId === table.id);
+                        
+                        if (assigned.length < table.seats) {
+                            guest.tableId = table.id;
+                            break;
+                        } else {
+                            tableIndex++;
+                        }
+                    }
+                });
+            });
+
+            renderAssignmentView();
+        }
+
+        function clearAllAssignments() {
+            if (confirm('Clear all seat assignments?')) {
+                guests.forEach(g => g.tableId = null);
+                renderAssignmentView();
+            }
+        }
+
+        // Save and Load Functions
+        function saveToFile() {
+            const data = {
+                guests: guests,
+                tables: tables,
+                savedDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'wedding-seating-plan-' + new Date().toISOString().split('T')[0] + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function loadFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    guests = data.guests || [];
+                    tables = data.tables || [];
+                    
+                    // Re-render everything
+                    const canvas = document.getElementById('floorPlanCanvas');
+                    canvas.innerHTML = '';
+                    tables.forEach(table => renderTable(table));
+                    updateStats();
+                    
+                    // Update guest inputs if on tab 1
+                    const guestInputs = document.getElementById('guestInputs');
+                    guestInputs.innerHTML = '';
+                    guests.forEach(guest => {
+                        const row = document.createElement('div');
+                        row.className = 'guest-row';
+                        row.innerHTML = `
+                            <input type="text" placeholder="Guest name" class="guest-name" value="${guest.name}">
+                            <select class="guest-category">
+                                <option value="family" ${guest.category === 'family' ? 'selected' : ''}>Family</option>
+                                <option value="close-friends" ${guest.category === 'close-friends' ? 'selected' : ''}>Close Friends</option>
+                                <option value="friends" ${guest.category === 'friends' ? 'selected' : ''}>Friends</option>
+                                <option value="colleagues" ${guest.category === 'colleagues' ? 'selected' : ''}>Colleagues</option>
+                                <option value="other" ${guest.category === 'other' ? 'selected' : ''}>Other</option>
+                            </select>
+                            <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
+                        `;
+                        guestInputs.appendChild(row);
+                    });
+                    
+                    alert('Seating plan loaded successfully!');
+                    if (tables.length > 0) {
+                        switchTab(1); // Go to floor plan view
+                    }
+                } catch (error) {
+                    alert('Error loading file. Please make sure it\'s a valid seating plan file.');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        // Export as Image Function
+        function exportAsImage() {
+            const canvas = document.getElementById('assignmentCanvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            // Create a temporary canvas
+            const tempCanvas = document.createElement('canvas');
+            const ctx = tempCanvas.getContext('2d');
+            
+            // Set canvas size to match the visible area
+            const scale = 2; // Higher resolution
+            tempCanvas.width = canvasRect.width * scale;
+            tempCanvas.height = canvasRect.height * scale;
+            
+            // Scale context for higher resolution
+            ctx.scale(scale, scale);
+            
+            // Fill background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvasRect.width, canvasRect.height);
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvasRect.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvasRect.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvasRect.height; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvasRect.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw each table
+            tables.forEach(table => {
+                const tableNumber = tables.indexOf(table) + 1;
+                const assignedGuests = guests.filter(g => g.tableId === table.id);
+                
+                // Draw table background
+                ctx.fillStyle = '#fff5f5';
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 3;
+                
+                if (table.shape === 'round') {
+                    ctx.beginPath();
+                    ctx.arc(table.x + table.width/2, table.y + table.height/2, table.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    if (table.shape === 'round') {
+                        ctx.beginPath();
+                        ctx.arc(table.x + table.width/2, table.y + table.height/2, table.width/2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.fillRect(table.x, table.y, table.width, table.height);
+                        ctx.strokeRect(table.x, table.y, table.width, table.height);
+                    }
+                }
+                
+                // Draw table label
+                ctx.fillStyle = '#667eea';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Table ${tableNumber}`, table.x + table.width/2, table.y + 20);
+                
+                // Draw capacity
+                ctx.fillStyle = '#666';
+                ctx.font = '12px sans-serif';
+                ctx.fillText(`${assignedGuests.length}/${table.seats}`, table.x + table.width/2, table.y + 35);
+                
+                // Draw guests
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'left';
+                assignedGuests.forEach((guest, index) => {
+                    const y = table.y + 50 + (index * 14);
+                    if (y < table.y + table.height - 5) {
+                        // Color indicator
+                        const colors = {
+                            'family': '#fdcb6e',
+                            'close-friends': '#74b9ff',
+                            'friends': '#a29bfe',
+                            'colleagues': '#fd79a8',
+                            'other': '#b2bec3'
+                        };
+                        ctx.fillStyle = colors[guest.category] || '#b2bec3';
+                        ctx.fillRect(table.x + 10, y - 10, 3, 12);
+                        
+                        // Guest name
+                        ctx.fillStyle = '#333';
+                        const maxWidth = table.width - 25;
+                        let name = guest.name;
+                        if (ctx.measureText(name).width > maxWidth) {
+                            while (ctx.measureText(name + '...').width > maxWidth && name.length > 0) {
+                                name = name.slice(0, -1);
+                            }
+                            name += '...';
+                        }
+                        ctx.fillText(name, table.x + 18, y);
+                    }
+                });
+            });
+            
+            // Add title at the top
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Wedding Seating Plan', canvasRect.width / 2, 30);
+            
+            // Convert to image and download
+            tempCanvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'wedding-seating-plan-' + new Date().toISOString().split('T')[0] + '.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+    </script>
+</body>
+</html>

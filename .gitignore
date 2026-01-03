@@ -1,0 +1,13 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Saved seating plans (optional - remove if you want to track these)
+*.json
+
+# Exported images (optional - remove if you want to track these)
+*.png
