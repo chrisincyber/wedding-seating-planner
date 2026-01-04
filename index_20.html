@@ -1,0 +1,2258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Seating Planner - Floor Plan Designer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-gradient-start: #f5f7fa;
+            --bg-gradient-end: #c3cfe2;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --text-light: #999;
+            --border-color: #e0e0e0;
+            --border-light: #f0f0f0;
+            --card-bg: white;
+            --input-bg: white;
+            --shadow-sm: rgba(0,0,0,0.1);
+            --shadow-md: rgba(0,0,0,0.15);
+            --grid-color: rgba(0,0,0,.05);
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-gradient-start: #0f3460;
+            --bg-gradient-end: #16213e;
+            --text-primary: #e4e4e4;
+            --text-secondary: #b0b0b0;
+            --text-light: #888;
+            --border-color: #2d3748;
+            --border-light: #374151;
+            --card-bg: #16213e;
+            --input-bg: #1a1a2e;
+            --shadow-sm: rgba(0,0,0,0.3);
+            --shadow-md: rgba(0,0,0,0.4);
+            --grid-color: rgba(255,255,255,.05);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: var(--bg-primary);
+            border-radius: 15px;
+            box-shadow: 0 10px 40px var(--shadow-sm);
+            overflow: hidden;
+            transition: background 0.3s ease;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .dark-mode-toggle {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dark-mode-toggle:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-color);
+            transition: background 0.3s ease;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            color: var(--text-primary);
+        }
+
+        .tab:hover {
+            background: var(--border-light);
+        }
+
+        .tab.active {
+            background: var(--bg-primary);
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+
+        h2, h3 {
+            color: var(--text-primary);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            background: var(--bg-primary);
+            transition: background 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Setup Section Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        h4 {
+            margin: 0;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        input[type="number"], input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #48dbfb;
+        }
+
+        .btn-danger {
+            background: #ff4757;
+        }
+
+        .remove-btn {
+            background: #ff4757;
+            padding: 12px 20px;
+        }
+
+        /* Floor Plan Styles */
+        .floor-plan-container {
+            display: grid;
+            grid-template-columns: 220px 1fr 280px;
+            gap: 15px;
+            height: 70vh;
+            min-height: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .tools-panel {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 12px;
+            overflow-y: auto;
+            transition: background 0.3s ease;
+            border: 3px solid #667eea; /* Visible purple border */
+            max-width: 100%;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .tools-panel h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 700;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .tool-btn {
+            width: 100%;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: var(--card-bg);
+            border: 3px solid #667eea;
+            border-radius: 12px;
+            overflow: auto;
+            height: 100%;
+            max-height: 70vh;
+            transition: background 0.3s ease, border-color 0.3s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        #floorPlanCanvas {
+            width: 100%;
+            min-width: 300px;
+            height: 100%;
+            min-height: 350px;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            cursor: crosshair;
+            position: relative;
+        }
+
+        #assignmentCanvas {
+            width: 100%;
+            min-width: 300px;
+            height: 100%;
+            min-height: 350px;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            position: relative;
+        }
+
+        .guests-panel {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 12px;
+            overflow-y: auto;
+            transition: background 0.3s ease;
+            border: 3px solid #667eea; /* Visible purple border */
+            max-width: 100%;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .guests-panel h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 700;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .guest-card {
+            background: var(--card-bg);
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: move;
+            border-left: 4px solid;
+            box-shadow: 0 2px 5px var(--shadow-sm);
+            transition: transform 0.2s, box-shadow 0.2s, background 0.3s ease;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .guest-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 10px var(--shadow-md);
+        }
+
+        .guest-card.dragging {
+            opacity: 0.5;
+        }
+
+        .guest-card.family { border-left-color: #fdcb6e; }
+        .guest-card.close-friends { border-left-color: #74b9ff; }
+        .guest-card.friends { border-left-color: #a29bfe; }
+        .guest-card.colleagues { border-left-color: #fd79a8; }
+        .guest-card.other { border-left-color: #b2bec3; }
+
+        .table-shape-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .shape-option {
+            flex: 1;
+            min-width: 55px;
+            padding: 8px 5px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .shape-option:hover {
+            border-color: #667eea;
+        }
+
+        .shape-option.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .table-element {
+            position: absolute;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+            border: 3px solid #667eea;
+            border-radius: 8px;
+            cursor: move;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .table-element.round {
+            border-radius: 50%;
+        }
+
+        .table-element.selected {
+            border-color: #ff4757;
+            box-shadow: 0 0 0 3px rgba(255, 71, 87, 0.3);
+        }
+
+        .table-element:hover {
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .table-label {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .table-capacity {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .table-guests-list {
+            font-size: 11px;
+            color: var(--text-primary);
+            margin-top: 5px;
+            max-height: 60px;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .table-guest-item {
+            padding: 2px 5px;
+            background: var(--card-bg);
+            margin: 2px 0;
+            border-radius: 3px;
+            border-left: 3px solid;
+            transition: background 0.3s ease;
+        }
+
+        .stats {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            transition: background 0.3s ease;
+        }
+
+        .stat-item {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .categories {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .category-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            user-select: none;
+        }
+
+        .category-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .category-badge.active {
+            opacity: 1;
+        }
+
+        .category-badge:not(.active) {
+            opacity: 0.3;
+            filter: grayscale(80%);
+        }
+
+        .cat-status {
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        .category-badge:not(.active) .cat-status::before {
+            content: '✗ ';
+        }
+
+        .category-badge.active .cat-status::before {
+            content: '✓ ';
+        }
+
+        .cat-family { background: #ffeaa7; color: #2d3436; }
+        .cat-close-friends { background: #74b9ff; color: #2d3436; }
+        .cat-friends { background: #a29bfe; color: white; }
+        .cat-colleagues { background: #fd79a8; color: white; }
+        .cat-other { background: #dfe6e9; color: #2d3436; }
+
+        .column-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .column-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            user-select: none;
+            background: #667eea;
+            color: white;
+        }
+
+        .column-badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .column-badge.active {
+            opacity: 1;
+        }
+
+        .column-badge:not(.active) {
+            opacity: 0.3;
+            filter: grayscale(80%);
+        }
+
+        .col-status {
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        .column-badge:not(.active) .col-status::before {
+            content: '✗ ';
+        }
+
+        .column-badge.active .col-status::before {
+            content: '✓ ';
+        }
+
+        .custom-field-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+        }
+
+        .custom-field-badge button {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .custom-field-badge:hover button {
+            opacity: 1;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .controls-row input {
+            flex: 1;
+        }
+
+        .table-list-item {
+            background: var(--card-bg);
+            padding: 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 2px 4px var(--shadow-sm);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .table-list-header {
+            font-weight: 700;
+            font-size: 16px;
+            color: #667eea;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .table-list-guests {
+            font-size: 13px;
+        }
+
+        .table-list-guest {
+            padding: 6px 10px;
+            margin: 4px 0;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            border-left: 3px solid;
+            color: var(--text-primary);
+            transition: background 0.3s ease;
+        }
+
+        .table-list-guest.family { border-left-color: #fdcb6e; }
+        .table-list-guest.close-friends { border-left-color: #74b9ff; }
+        .table-list-guest.friends { border-left-color: #a29bfe; }
+        .table-list-guest.colleagues { border-left-color: #fd79a8; }
+        .table-list-guest.other { border-left-color: #b2bec3; }
+
+        .table-list-empty {
+            color: var(--text-light);
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        @media (max-width: 1600px) {
+            .floor-plan-container {
+                grid-template-columns: 200px 1fr 240px;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .floor-plan-container {
+                grid-template-columns: 180px 1fr 220px;
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .floor-plan-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .canvas-container {
+                max-height: 500px;
+            }
+            
+            /* Show scroll hint on narrow screens */
+            .floor-plan-container::after {
+                content: "⬇️ SCROLL DOWN to see the Table List panel below! ⬇️";
+                display: block;
+                background: #ff4757;
+                color: white;
+                padding: 15px;
+                text-align: center;
+                font-weight: bold;
+                border-radius: 8px;
+                margin-top: 20px;
+                font-size: 16px;
+                animation: pulse 2s infinite;
+            }
+            
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💒 Wedding Seating Planner</h1>
+            <p>Design your perfect floor plan and seating arrangement</p>
+            <div style="position: absolute; bottom: 10px; right: 30px; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 500;">
+                v2.1
+            </div>
+            <button class="dark-mode-toggle" onclick="toggleDarkMode()">
+                <span id="darkModeIcon">🌙</span>
+                <span id="darkModeText">Dark Mode</span>
+            </button>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">1. Add Guests</div>
+            <div class="tab" onclick="switchTab(1)">2. Design Floor Plan</div>
+            <div class="tab" onclick="switchTab(2)">3. Assign Seats</div>
+        </div>
+
+        <!-- Tab 1: Guest Setup -->
+        <div class="tab-content active" id="tab1">
+            <h2 style="margin-bottom: 20px;">Add Your Guests</h2>
+            
+            <div class="form-group">
+                <label>⚙️ Customize View (click to show/hide • drag to reorder):</label>
+                <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                    
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-primary);">Guest Categories:</h4>
+                        <div class="categories" id="categoryList">
+                            <span class="category-badge cat-family active" data-cat="family" draggable="true" onclick="toggleCategory(this)" title="Click to toggle, drag to reorder">
+                                <span class="cat-status"></span>Family
+                            </span>
+                            <span class="category-badge cat-close-friends active" data-cat="close-friends" draggable="true" onclick="toggleCategory(this)" title="Click to toggle, drag to reorder">
+                                <span class="cat-status"></span>Close Friends
+                            </span>
+                            <span class="category-badge cat-friends active" data-cat="friends" draggable="true" onclick="toggleCategory(this)" title="Click to toggle, drag to reorder">
+                                <span class="cat-status"></span>Friends
+                            </span>
+                            <span class="category-badge cat-colleagues active" data-cat="colleagues" draggable="true" onclick="toggleCategory(this)" title="Click to toggle, drag to reorder">
+                                <span class="cat-status"></span>Colleagues
+                            </span>
+                            <span class="category-badge cat-other active" data-cat="other" draggable="true" onclick="toggleCategory(this)" title="Click to toggle, drag to reorder">
+                                <span class="cat-status"></span>Other
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <input type="text" id="newCategoryInput" placeholder="Add custom category..." style="flex: 1; font-size: 13px;">
+                            <button class="btn-secondary" onclick="addCustomCategory()" style="padding: 8px 15px; font-size: 13px;">+ Add</button>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 15px 0; border: none; border-top: 1px solid var(--border-color);">
+
+                    <div>
+                        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: var(--text-primary);">Guest Data Fields:</h4>
+                        <div class="column-badges" id="columnBadges">
+                            <span class="column-badge active" data-column="age" draggable="true" onclick="toggleColumn(this)" title="Click to toggle, drag to reorder">
+                                <span class="col-status"></span>Age
+                            </span>
+                            <span class="column-badge active" data-column="coupleId" draggable="true" onclick="toggleColumn(this)" title="Click to toggle, drag to reorder">
+                                <span class="col-status"></span>Couple ID
+                            </span>
+                            <span class="column-badge active" data-column="plusOne" draggable="true" onclick="toggleColumn(this)" title="Click to toggle, drag to reorder">
+                                <span class="col-status"></span>+1
+                            </span>
+                            <span class="column-badge active" data-column="vip" draggable="true" onclick="toggleColumn(this)" title="Click to toggle, drag to reorder">
+                                <span class="col-status"></span>VIP
+                            </span>
+                            <span class="column-badge active" data-column="notes" draggable="true" onclick="toggleColumn(this)" title="Click to toggle, drag to reorder">
+                                <span class="col-status"></span>Notes
+                            </span>
+                        </div>
+                        <div style="margin-top: 15px; padding: 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; border: 1px dashed var(--border-color);">
+                            <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text-primary);">➕ Create Custom Field:</div>
+                            <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="customFieldName" placeholder="Field name (e.g., Dietary, Table Preference)" style="font-size: 13px;">
+                                <select id="customFieldType" style="font-size: 13px;" onchange="toggleCustomFieldOptions()">
+                                    <option value="text">Text Field</option>
+                                    <option value="checkbox">Checkbox</option>
+                                    <option value="select">Dropdown List</option>
+                                    <option value="number">Number</option>
+                                    <option value="date">Date</option>
+                                </select>
+                                <button class="btn-secondary" onclick="addCustomField()" style="padding: 8px 12px; font-size: 13px;">Add Field</button>
+                            </div>
+                            <div id="customFieldOptionsDiv" style="display: none; margin-top: 8px;">
+                                <input type="text" id="customFieldOptions" placeholder="Options (comma-separated, e.g., Vegetarian, Vegan, Gluten-free)" style="font-size: 12px; width: 100%;">
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">💡 For dropdown: enter options separated by commas</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Add Guests:</label>
+                <div id="guestTableHeader" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                    <!-- Header will be generated dynamically -->
+                </div>
+                <div id="guestInputs"></div>
+                <button class="btn-secondary" onclick="addGuestRow()">+ Add Guest</button>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="saveGuestsAndContinue()">Continue to Floor Plan →</button>
+                <button class="btn-secondary" onclick="document.getElementById('loadFile0').click()">📂 Load Saved Plan</button>
+                <input type="file" id="loadFile0" accept=".json" style="display: none;" onchange="loadFromFile(event)">
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; font-size: 13px; color: var(--text-secondary);">
+                <strong>💡 Quick Tips:</strong><br>
+                • <strong>Categories:</strong> Only active (✓) categories will be used in auto-assign. Order determines priority.<br>
+                • <strong>Fields:</strong> Hide fields you don't need. Reorder them to match your workflow.<br>
+                • <strong>Age:</strong> Kids (0-12), Teens (13-17), Adults (18-64), Seniors (65+)<br>
+                • <strong>Couple ID:</strong> Same ID (C1, C2...) keeps couples together at one table<br>
+                • <strong>VIP:</strong> Marked guests get priority seating in auto-assign
+            </div>
+        </div>
+
+        <!-- Tab 2: Floor Plan Design -->
+        <div class="tab-content" id="tab2">
+            <h2 style="margin-bottom: 20px;">Design Your Floor Plan</h2>
+            
+            <div class="floor-plan-container">
+                <div class="tools-panel">
+                    <h3>Table Tools</h3>
+                    
+                    <div class="form-group">
+                        <label>Table Shape:</label>
+                        <div class="table-shape-selector">
+                            <div class="shape-option active" data-shape="round" onclick="selectShape('round')">
+                                <div style="font-size: 24px;">⭕</div>
+                                <div style="font-size: 11px;">Round</div>
+                            </div>
+                            <div class="shape-option" data-shape="square" onclick="selectShape('square')">
+                                <div style="font-size: 24px;">⬜</div>
+                                <div style="font-size: 11px;">Square</div>
+                            </div>
+                            <div class="shape-option" data-shape="rectangle" onclick="selectShape('rectangle')">
+                                <div style="font-size: 24px;">▬</div>
+                                <div style="font-size: 11px;">Rectangle</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Seats per Table:</label>
+                        <input type="number" id="seatsPerTable" min="2" max="20" value="8">
+                    </div>
+
+                    <button class="tool-btn" onclick="addTableToCanvas()">
+                        ➕ Add Table
+                    </button>
+
+                    <button class="tool-btn btn-danger" onclick="deleteSelectedTable()">
+                        🗑️ Delete Selected
+                    </button>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+
+                    <div class="form-group">
+                        <label>Quick Add:</label>
+                        <div class="controls-row">
+                            <input type="number" id="quickAddCount" min="1" max="50" value="5" placeholder="# of tables">
+                        </div>
+                        <button class="tool-btn btn-secondary" onclick="quickAddTables()">
+                            Add Multiple Tables
+                        </button>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Tables</div>
+                            <div class="stat-value" id="tableCountStat">0</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Total Seats</div>
+                            <div class="stat-value" id="totalSeatsStat">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="canvas-container">
+                    <div id="floorPlanCanvas"></div>
+                </div>
+
+                <div class="tools-panel">
+                    <h3>Instructions</h3>
+                    <p style="font-size: 13px; line-height: 1.6; color: #666;">
+                        <strong>Add Tables:</strong> Select shape and seats, then click "Add Table"<br><br>
+                        <strong>Move Tables:</strong> Drag tables to position them on your floor plan<br><br>
+                        <strong>Delete Tables:</strong> Click a table to select it, then click "Delete Selected"<br><br>
+                        <strong>Quick Setup:</strong> Use "Add Multiple Tables" for faster layout
+                    </p>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="switchTab(0)">← Back to Guests</button>
+                <button onclick="switchTab(2)">Continue to Seat Assignment →</button>
+                <button class="btn-secondary" onclick="saveToFile()">💾 Save Progress</button>
+                <button class="btn-secondary" onclick="document.getElementById('loadFile').click()">📂 Load Progress</button>
+                <input type="file" id="loadFile" accept=".json" style="display: none;" onchange="loadFromFile(event)">
+            </div>
+        </div>
+
+        <!-- Tab 3: Seat Assignment -->
+        <div class="tab-content" id="tab3">
+            <h2 style="margin-bottom: 20px;">Assign Guests to Tables</h2>
+            
+            <div id="widthWarning" style="display: none; background: #ff6b6b; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold;">
+                ⚠️ Your screen is narrow. The Table List panel is below - scroll down! Or press F11 for fullscreen.
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Total Guests</div>
+                    <div class="stat-value" id="totalGuestsStat">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Assigned</div>
+                    <div class="stat-value" id="assignedGuestsStat">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Unassigned</div>
+                    <div class="stat-value" id="unassignedGuestsStat">0</div>
+                </div>
+            </div>
+
+            <div class="floor-plan-container">
+                <div class="guests-panel">
+                    <h3>👥 Unassigned Guests</h3>
+                    <div id="unassignedGuestsList"></div>
+                </div>
+
+                <div class="canvas-container">
+                    <div id="assignmentCanvas"></div>
+                </div>
+
+                <div class="tools-panel">
+                    <h3>📋 Table List</h3>
+                    <div id="tableListView" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px; padding: 10px; border-radius: 8px; min-height: 150px; background: var(--card-bg); border: 1px dashed var(--border-color);">
+                        <div style="color: var(--text-light); text-align: center; padding: 20px;">No tables yet. Create tables in "Design Floor Plan"</div>
+                    </div>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border-color);">
+
+                    <h3>⚡ Actions</h3>
+                    <button class="tool-btn btn-secondary" onclick="autoAssignGuests()">
+                        ✨ Auto-Assign by Category
+                    </button>
+
+                    <button class="tool-btn btn-danger" onclick="clearAllAssignments()">
+                        🔄 Clear All Assignments
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button onclick="switchTab(1)">← Back to Floor Plan</button>
+                <button class="btn-secondary" onclick="saveToFile()">💾 Save Progress</button>
+                <button class="btn-secondary" onclick="document.getElementById('loadFile2').click()">📂 Load Progress</button>
+                <button class="btn-secondary" onclick="exportAsImage()">📸 Export as Image</button>
+                <input type="file" id="loadFile2" accept=".json" style="display: none;" onchange="loadFromFile(event)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let guests = [];
+        let tables = [];
+        let selectedShape = 'round';
+        let selectedTable = null;
+        let draggedGuest = null;
+        let isDraggingTable = false;
+        let dragOffset = { x: 0, y: 0 };
+        let customCategories = []; // Store custom categories
+        let customFields = []; // Store custom guest fields
+
+        // Column configuration
+        const baseColumnConfig = {
+            age: { label: 'Age', width: '0.8fr', type: 'select', isBuiltIn: true },
+            coupleId: { label: 'Couple ID', width: '0.8fr', type: 'text', isBuiltIn: true },
+            plusOne: { label: '+1', width: '0.8fr', type: 'checkbox', isBuiltIn: true },
+            vip: { label: 'VIP', width: '0.8fr', type: 'checkbox', isBuiltIn: true },
+            notes: { label: 'Notes', width: '2fr', type: 'text', isBuiltIn: true }
+        };
+
+        function getColumnConfig() {
+            const config = { ...baseColumnConfig };
+            customFields.forEach(field => {
+                config[field.id] = {
+                    label: field.label,
+                    width: field.width || '1fr',
+                    type: field.type,
+                    options: field.options || [],
+                    isBuiltIn: false
+                };
+            });
+            return config;
+        }
+
+        function toggleCustomFieldOptions() {
+            const type = document.getElementById('customFieldType').value;
+            const optionsDiv = document.getElementById('customFieldOptionsDiv');
+            optionsDiv.style.display = type === 'select' ? 'block' : 'none';
+        }
+
+        function addCustomField() {
+            const name = document.getElementById('customFieldName').value.trim();
+            const type = document.getElementById('customFieldType').value;
+            const optionsInput = document.getElementById('customFieldOptions').value.trim();
+            
+            if (!name) {
+                alert('Please enter a field name');
+                return;
+            }
+            
+            // Create field ID
+            const id = 'custom_' + name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+            
+            // Check if already exists
+            if (customFields.find(f => f.id === id)) {
+                alert('A field with this name already exists');
+                return;
+            }
+            
+            // Parse options for dropdown
+            let options = [];
+            if (type === 'select') {
+                if (!optionsInput) {
+                    alert('Please enter options for the dropdown (comma-separated)');
+                    return;
+                }
+                options = optionsInput.split(',').map(opt => opt.trim()).filter(opt => opt);
+            }
+            
+            // Determine width based on type
+            let width = '1fr';
+            if (type === 'checkbox') width = '0.8fr';
+            if (type === 'text' && name.toLowerCase().includes('note')) width = '2fr';
+            if (type === 'date') width = '1.2fr';
+            
+            // Add to custom fields
+            customFields.push({
+                id: id,
+                label: name,
+                type: type,
+                options: options,
+                width: width
+            });
+            
+            // Add badge to UI
+            const columnBadges = document.getElementById('columnBadges');
+            const badge = document.createElement('span');
+            badge.className = 'column-badge active custom-field-badge';
+            badge.dataset.column = id;
+            badge.draggable = true;
+            badge.onclick = function() { toggleColumn(this); };
+            badge.title = 'Click to toggle, drag to reorder';
+            badge.innerHTML = `
+                <span class="col-status"></span>${name}
+                <button onclick="removeCustomField('${id}', event)" style="margin-left: 8px; background: rgba(255,255,255,0.3); border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; font-size: 12px; line-height: 1; padding: 0;" title="Delete field">×</button>
+            `;
+            columnBadges.appendChild(badge);
+            
+            // Set up drag handlers
+            setupColumnDragHandlers(badge);
+            
+            // Clear inputs
+            document.getElementById('customFieldName').value = '';
+            document.getElementById('customFieldOptions').value = '';
+            document.getElementById('customFieldType').value = 'text';
+            toggleCustomFieldOptions();
+            
+            // Update table
+            updateGuestTable();
+        }
+
+        function removeCustomField(fieldId, event) {
+            event.stopPropagation(); // Prevent toggle
+            
+            if (!confirm('Remove this custom field? Data in this field will be lost.')) {
+                return;
+            }
+            
+            // Remove from array
+            customFields = customFields.filter(f => f.id !== fieldId);
+            
+            // Remove badge
+            const badge = document.querySelector(`.column-badge[data-column="${fieldId}"]`);
+            if (badge) badge.remove();
+            
+            // Update table
+            updateGuestTable();
+        }
+
+        function getActiveColumns() {
+            const badges = Array.from(document.querySelectorAll('.column-badge.active'));
+            return badges.map(b => b.dataset.column);
+        }
+
+        function toggleColumn(badge) {
+            badge.classList.toggle('active');
+            updateGuestTable();
+        }
+
+        function setupColumnDragHandlers(badge) {
+            let draggedColumn = null;
+
+            badge.addEventListener('dragstart', function(e) {
+                draggedColumn = this;
+                this.style.opacity = '0.4';
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            badge.addEventListener('dragend', function(e) {
+                this.style.opacity = '1';
+            });
+
+            badge.addEventListener('dragover', function(e) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            });
+
+            badge.addEventListener('dragenter', function(e) {
+                if (this !== draggedColumn) {
+                    this.style.borderLeft = '3px solid #667eea';
+                }
+            });
+
+            badge.addEventListener('dragleave', function(e) {
+                this.style.borderLeft = '';
+            });
+
+            badge.addEventListener('drop', function(e) {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+                
+                this.style.borderLeft = '';
+                
+                if (draggedColumn !== this) {
+                    const columnList = document.getElementById('columnBadges');
+                    const allBadges = Array.from(columnList.querySelectorAll('.column-badge'));
+                    const draggedIndex = allBadges.indexOf(draggedColumn);
+                    const targetIndex = allBadges.indexOf(this);
+                    
+                    if (draggedIndex < targetIndex) {
+                        columnList.insertBefore(draggedColumn, this.nextSibling);
+                    } else {
+                        columnList.insertBefore(draggedColumn, this);
+                    }
+                    
+                    // Update guest table after reordering
+                    updateGuestTable();
+                }
+                
+                return false;
+            });
+        }
+
+        function updateGuestTable() {
+            const activeColumns = getActiveColumns();
+            const columnConfig = getColumnConfig();
+            
+            // Build grid template
+            let gridTemplate = '2fr 1.5fr'; // Name and Category always visible
+            activeColumns.forEach(col => {
+                gridTemplate += ' ' + columnConfig[col].width;
+            });
+            gridTemplate += ' 80px'; // Delete button
+            
+            // Update header
+            const header = document.getElementById('guestTableHeader');
+            let headerHTML = '<div style="display: grid; grid-template-columns: ' + gridTemplate + '; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-secondary);">';
+            headerHTML += '<div>Guest Name</div><div>Category</div>';
+            activeColumns.forEach(col => {
+                headerHTML += '<div>' + columnConfig[col].label + '</div>';
+            });
+            headerHTML += '<div></div>'; // For delete button column
+            headerHTML += '</div>';
+            header.innerHTML = headerHTML;
+            
+            // Update all existing rows
+            document.querySelectorAll('.guest-row').forEach(row => {
+                const currentData = {
+                    name: row.querySelector('.guest-name')?.value || '',
+                    category: row.querySelector('.guest-category')?.value || 'family'
+                };
+                
+                // Get all field values
+                activeColumns.forEach(col => {
+                    const config = columnConfig[col];
+                    if (config.type === 'checkbox') {
+                        currentData[col] = row.querySelector(`.guest-field-${col}`)?.checked || false;
+                    } else {
+                        currentData[col] = row.querySelector(`.guest-field-${col}`)?.value || '';
+                    }
+                });
+                
+                row.style.cssText = 'display: grid; grid-template-columns: ' + gridTemplate + '; gap: 8px; margin-bottom: 10px; align-items: center;';
+                row.innerHTML = buildGuestRowHTML(currentData, activeColumns);
+            });
+        }
+
+        function buildGuestRowHTML(data, activeColumns) {
+            const columnConfig = getColumnConfig();
+            const categoryOptions = `
+                <option value="family">Family</option>
+                <option value="close-friends">Close Friends</option>
+                <option value="friends">Friends</option>
+                <option value="colleagues">Colleagues</option>
+                <option value="other">Other</option>
+                ${customCategories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+            `;
+            
+            let html = `
+                <input type="text" placeholder="Guest name" class="guest-name" value="${data.name || ''}" style="width: 100%;">
+                <select class="guest-category" style="width: 100%;">
+                    ${categoryOptions}
+                </select>
+            `;
+            
+            activeColumns.forEach(col => {
+                const config = columnConfig[col];
+                const value = data[col] || '';
+                
+                if (col === 'age') {
+                    html += `
+                        <select class="guest-field-${col}" style="width: 100%; font-size: 12px;">
+                            <option value="">-</option>
+                            <option value="child" ${value === 'child' ? 'selected' : ''}>Kid</option>
+                            <option value="teen" ${value === 'teen' ? 'selected' : ''}>Teen</option>
+                            <option value="adult" ${value === 'adult' ? 'selected' : ''}>Adult</option>
+                            <option value="senior" ${value === 'senior' ? 'selected' : ''}>Senior</option>
+                        </select>
+                    `;
+                } else if (config.type === 'select') {
+                    html += `<select class="guest-field-${col}" style="width: 100%; font-size: 12px;">`;
+                    html += '<option value="">-</option>';
+                    config.options.forEach(opt => {
+                        html += `<option value="${opt}" ${value === opt ? 'selected' : ''}>${opt}</option>`;
+                    });
+                    html += `</select>`;
+                } else if (config.type === 'checkbox') {
+                    html += `<input type="checkbox" class="guest-field-${col}" ${value ? 'checked' : ''} title="${config.label}" style="width: 20px; height: 20px; margin: 0 auto; display: block;">`;
+                } else if (config.type === 'text') {
+                    const placeholder = col === 'coupleId' ? 'C1, C2...' : col === 'notes' ? 'Notes...' : config.label;
+                    html += `<input type="text" placeholder="${placeholder}" class="guest-field-${col}" value="${value}" style="width: 100%; font-size: 13px;">`;
+                } else if (config.type === 'number') {
+                    html += `<input type="number" class="guest-field-${col}" value="${value}" placeholder="${config.label}" style="width: 100%; font-size: 13px;">`;
+                } else if (config.type === 'date') {
+                    html += `<input type="date" class="guest-field-${col}" value="${value}" style="width: 100%; font-size: 12px;">`;
+                }
+            });
+            
+            html += `<button class="remove-btn" onclick="this.parentElement.remove()" style="padding: 8px 12px; font-size: 18px;">×</button>`;
+            
+            return html;
+        }
+
+        // Initialize
+        updateGuestTable(); // Set up the header
+        
+        for (let i = 0; i < 5; i++) {
+            addGuestRow();
+        }
+
+        function switchTab(index) {
+            console.log('Switching to tab:', index);
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+
+            if (index === 2) {
+                console.log('Loading assignment view...');
+                console.log('Current tables:', tables.length);
+                console.log('Current guests:', guests.length);
+                renderAssignmentView();
+                checkScreenWidth(); // Check if screen is wide enough
+            }
+        }
+
+        function checkScreenWidth() {
+            const warning = document.getElementById('widthWarning');
+            if (window.innerWidth < 1200) {
+                warning.style.display = 'block';
+                if (window.innerWidth < 900) {
+                    warning.innerHTML = '⚠️ Your screen is narrow. The Table List panel is BELOW - <strong>SCROLL DOWN!</strong> Or press F11 for fullscreen.';
+                } else {
+                    warning.innerHTML = '💡 Your screen is a bit narrow. The Table List (right panel) might be squished. Try F11 for fullscreen or zoom out (Ctrl -)';
+                }
+            } else {
+                warning.style.display = 'none';
+            }
+        }
+
+        // Check width on resize
+        window.addEventListener('resize', function() {
+            if (document.querySelector('.tab-content.active')?.id === 'tab3') {
+                checkScreenWidth();
+            }
+        });
+
+        function addGuestRow() {
+            const container = document.getElementById('guestInputs');
+            const activeColumns = getActiveColumns();
+            const columnConfig = getColumnConfig();
+            
+            // Build grid template
+            let gridTemplate = '2fr 1.5fr'; // Name and Category always visible
+            activeColumns.forEach(col => {
+                gridTemplate += ' ' + columnConfig[col].width;
+            });
+            gridTemplate += ' 80px'; // Delete button
+            
+            const row = document.createElement('div');
+            row.className = 'guest-row';
+            row.style.cssText = 'display: grid; grid-template-columns: ' + gridTemplate + '; gap: 8px; margin-bottom: 10px; align-items: center;';
+            
+            row.innerHTML = buildGuestRowHTML({}, activeColumns);
+            container.appendChild(row);
+            
+            // Set category to first option
+            row.querySelector('.guest-category').value = 'family';
+        }
+
+        function addCustomCategory() {
+            const input = document.getElementById('newCategoryInput');
+            const name = input.value.trim();
+            if (!name) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            const id = name.toLowerCase().replace(/\s+/g, '-');
+            
+            // Check if already exists
+            if (customCategories.find(c => c.id === id)) {
+                alert('Category already exists');
+                return;
+            }
+            
+            // Generate a color
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#a29bfe', '#fd79a8', '#fdcb6e'];
+            const color = colors[customCategories.length % colors.length];
+            
+            customCategories.push({ id, name, color, active: true });
+            
+            // Add to category list display
+            const categoryList = document.getElementById('categoryList');
+            const badge = document.createElement('span');
+            badge.className = 'category-badge active';
+            badge.style.background = color;
+            badge.style.color = 'white';
+            badge.dataset.cat = id;
+            badge.draggable = true;
+            badge.onclick = function() { toggleCategory(this); };
+            badge.title = 'Click to toggle, drag to reorder';
+            badge.innerHTML = `<span class="cat-status"></span> ${name}`;
+            categoryList.appendChild(badge);
+            
+            // Set up drag handlers
+            setupCategoryDragHandlers(badge);
+            
+            // Update all category dropdowns
+            updateCategoryDropdowns();
+            
+            input.value = '';
+        }
+
+        function toggleCategory(badge) {
+            badge.classList.toggle('active');
+            const catId = badge.dataset.cat;
+            
+            // Update custom categories array
+            const customCat = customCategories.find(c => c.id === catId);
+            if (customCat) {
+                customCat.active = badge.classList.contains('active');
+            }
+        }
+
+        function setupCategoryDragHandlers(badge) {
+            let draggedCategory = null;
+
+            badge.addEventListener('dragstart', function(e) {
+                draggedCategory = this;
+                this.style.opacity = '0.4';
+                e.dataTransfer.effectAllowed = 'move';
+            });
+
+            badge.addEventListener('dragend', function(e) {
+                this.style.opacity = '1';
+            });
+
+            badge.addEventListener('dragover', function(e) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            });
+
+            badge.addEventListener('dragenter', function(e) {
+                if (this !== draggedCategory) {
+                    this.style.borderLeft = '3px solid #667eea';
+                }
+            });
+
+            badge.addEventListener('dragleave', function(e) {
+                this.style.borderLeft = '';
+            });
+
+            badge.addEventListener('drop', function(e) {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+                
+                this.style.borderLeft = '';
+                
+                if (draggedCategory !== this) {
+                    const categoryList = document.getElementById('categoryList');
+                    const allBadges = Array.from(categoryList.querySelectorAll('.category-badge'));
+                    const draggedIndex = allBadges.indexOf(draggedCategory);
+                    const targetIndex = allBadges.indexOf(this);
+                    
+                    if (draggedIndex < targetIndex) {
+                        categoryList.insertBefore(draggedCategory, this.nextSibling);
+                    } else {
+                        categoryList.insertBefore(draggedCategory, this);
+                    }
+                }
+                
+                return false;
+            });
+        }
+
+        // Initialize drag handlers for default categories
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryBadges = document.querySelectorAll('.category-badge');
+            categoryBadges.forEach(badge => {
+                setupCategoryDragHandlers(badge);
+            });
+            
+            const columnBadges = document.querySelectorAll('.column-badge');
+            columnBadges.forEach(badge => {
+                setupColumnDragHandlers(badge);
+            });
+        });
+
+        function updateCategoryDropdowns() {
+            const categoryOptions = `
+                <option value="family">Family</option>
+                <option value="close-friends">Close Friends</option>
+                <option value="friends">Friends</option>
+                <option value="colleagues">Colleagues</option>
+                <option value="other">Other</option>
+                ${customCategories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+            `;
+            
+            document.querySelectorAll('.guest-category').forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = categoryOptions;
+                select.value = currentValue;
+            });
+        }
+
+        function saveGuestsAndContinue() {
+            guests = [];
+            const rows = document.querySelectorAll('.guest-row');
+            const columnConfig = getColumnConfig();
+            
+            rows.forEach((row, index) => {
+                const name = row.querySelector('.guest-name').value.trim();
+                const category = row.querySelector('.guest-category').value;
+                
+                if (name) {
+                    const guestData = {
+                        id: 'guest_' + Date.now() + '_' + index,
+                        name: name,
+                        category: category,
+                        tableId: null
+                    };
+                    
+                    // Get all field values dynamically
+                    Object.keys(columnConfig).forEach(col => {
+                        const config = columnConfig[col];
+                        const field = row.querySelector(`.guest-field-${col}`);
+                        
+                        if (field) {
+                            if (config.type === 'checkbox') {
+                                guestData[col] = field.checked;
+                            } else {
+                                guestData[col] = field.value.trim();
+                            }
+                        }
+                    });
+                    
+                    guests.push(guestData);
+                }
+            });
+
+            if (guests.length === 0) {
+                alert('Please add at least one guest!');
+                return;
+            }
+
+            switchTab(1);
+        }
+
+        function selectShape(shape) {
+            selectedShape = shape;
+            document.querySelectorAll('.shape-option').forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.shape === shape);
+            });
+        }
+
+        function addTableToCanvas() {
+            const seats = parseInt(document.getElementById('seatsPerTable').value);
+            const canvas = document.getElementById('floorPlanCanvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            const table = {
+                id: 'table_' + Date.now(),
+                shape: selectedShape,
+                seats: seats,
+                x: 50 + (tables.length * 150) % (canvasRect.width - 200), // Spread horizontally
+                y: 50 + Math.floor((tables.length * 150) / (canvasRect.width - 200)) * 150,
+                width: selectedShape === 'rectangle' ? 180 : 120,
+                height: selectedShape === 'rectangle' ? 80 : 120,
+                guests: []
+            };
+
+            tables.push(table);
+            renderTable(table);
+            updateStats();
+        }
+
+        function renderTable(table) {
+            const canvas = document.getElementById('floorPlanCanvas');
+            const tableDiv = document.createElement('div');
+            tableDiv.className = 'table-element ' + table.shape;
+            tableDiv.id = table.id;
+            tableDiv.style.left = table.x + 'px';
+            tableDiv.style.top = table.y + 'px';
+            tableDiv.style.width = table.width + 'px';
+            tableDiv.style.height = table.height + 'px';
+
+            const tableNumber = tables.findIndex(t => t.id === table.id) + 1;
+            tableDiv.innerHTML = `
+                <div class="table-label">Table ${tableNumber}</div>
+                <div class="table-capacity">${table.guests.length}/${table.seats} seats</div>
+            `;
+
+            // Make draggable
+            tableDiv.addEventListener('mousedown', (e) => {
+                if (e.target === tableDiv || e.target.classList.contains('table-label') || e.target.classList.contains('table-capacity')) {
+                    isDraggingTable = true;
+                    selectedTable = table.id;
+                    const rect = tableDiv.getBoundingClientRect();
+                    dragOffset.x = e.clientX - rect.left;
+                    dragOffset.y = e.clientY - rect.top;
+                    
+                    // Highlight selected table
+                    document.querySelectorAll('.table-element').forEach(t => t.classList.remove('selected'));
+                    tableDiv.classList.add('selected');
+                }
+            });
+
+            canvas.appendChild(tableDiv);
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingTable && selectedTable) {
+                const table = tables.find(t => t.id === selectedTable);
+                const canvas = document.getElementById('floorPlanCanvas');
+                const canvasRect = canvas.getBoundingClientRect();
+                
+                table.x = e.clientX - canvasRect.left - dragOffset.x;
+                table.y = e.clientY - canvasRect.top - dragOffset.y;
+
+                // Constrain to canvas
+                table.x = Math.max(0, Math.min(table.x, canvasRect.width - table.width));
+                table.y = Math.max(0, Math.min(table.y, canvasRect.height - table.height));
+
+                const tableDiv = document.getElementById(table.id);
+                tableDiv.style.left = table.x + 'px';
+                tableDiv.style.top = table.y + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDraggingTable = false;
+        });
+
+        function deleteSelectedTable() {
+            if (!selectedTable) {
+                alert('Please select a table first by clicking on it');
+                return;
+            }
+
+            const table = tables.find(t => t.id === selectedTable);
+            if (table && table.guests.length > 0) {
+                if (!confirm('This table has guests assigned. Are you sure you want to delete it?')) {
+                    return;
+                }
+                // Unassign guests
+                table.guests.forEach(guestId => {
+                    const guest = guests.find(g => g.id === guestId);
+                    if (guest) guest.tableId = null;
+                });
+            }
+
+            tables = tables.filter(t => t.id !== selectedTable);
+            document.getElementById(selectedTable)?.remove();
+            selectedTable = null;
+            updateStats();
+        }
+
+        function quickAddTables() {
+            const count = parseInt(document.getElementById('quickAddCount').value);
+            const seats = parseInt(document.getElementById('seatsPerTable').value);
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => addTableToCanvas(), i * 50);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('tableCountStat').textContent = tables.length;
+            const totalSeats = tables.reduce((sum, t) => sum + t.seats, 0);
+            document.getElementById('totalSeatsStat').textContent = totalSeats;
+        }
+
+        // Assignment View
+        function renderAssignmentView() {
+            const canvas = document.getElementById('assignmentCanvas');
+            canvas.innerHTML = '';
+
+            console.log('=== CHECKING DOM ELEMENTS ===');
+            console.log('Unassigned panel exists:', !!document.querySelector('.guests-panel'));
+            console.log('Canvas exists:', !!document.getElementById('assignmentCanvas'));
+            console.log('Tools panel exists:', !!document.querySelector('.tools-panel'));
+            console.log('Table list view exists:', !!document.getElementById('tableListView'));
+            
+            const toolsPanel = document.querySelector('.tools-panel');
+            if (toolsPanel) {
+                console.log('Tools panel computed width:', window.getComputedStyle(toolsPanel).width);
+                console.log('Tools panel display:', window.getComputedStyle(toolsPanel).display);
+                console.log('Tools panel visibility:', window.getComputedStyle(toolsPanel).visibility);
+            }
+
+            // Render all tables
+            tables.forEach(table => {
+                const tableDiv = document.createElement('div');
+                tableDiv.className = 'table-element ' + table.shape;
+                tableDiv.id = 'assign_' + table.id;
+                tableDiv.style.left = table.x + 'px';
+                tableDiv.style.top = table.y + 'px';
+                tableDiv.style.width = table.width + 'px';
+                tableDiv.style.height = table.height + 'px';
+
+                const tableNumber = tables.findIndex(t => t.id === table.id) + 1;
+                const assignedGuests = guests.filter(g => g.tableId === table.id);
+                
+                let guestsList = '';
+                assignedGuests.forEach(guest => {
+                    const vipIcon = guest.vip ? '⭐' : '';
+                    const coupleIcon = guest.coupleId ? '💑' : '';
+                    const plusOneIcon = guest.plusOne ? '+1' : '';
+                    const icons = [vipIcon, coupleIcon, plusOneIcon].filter(i => i).join(' ');
+                    const displayText = icons ? `${guest.name} ${icons}` : guest.name;
+                    
+                    guestsList += `<div class="table-guest-item ${guest.category}" draggable="true" data-guest-id="${guest.id}" title="${guest.notes || ''}">${displayText}</div>`;
+                });
+
+                tableDiv.innerHTML = `
+                    <div class="table-label">Table ${tableNumber}</div>
+                    <div class="table-capacity">${assignedGuests.length}/${table.seats}</div>
+                    <div class="table-guests-list">${guestsList}</div>
+                `;
+
+                // Allow dropping
+                tableDiv.addEventListener('dragover', handleDragOver);
+                tableDiv.addEventListener('drop', (e) => handleDrop(e, table.id));
+                tableDiv.addEventListener('dragleave', handleDragLeave);
+
+                // Make guests draggable
+                tableDiv.querySelectorAll('.table-guest-item').forEach(item => {
+                    item.addEventListener('dragstart', handleGuestDragStart);
+                    item.addEventListener('dragend', handleGuestDragEnd);
+                });
+
+                canvas.appendChild(tableDiv);
+            });
+
+            renderUnassignedGuests();
+            renderTableListView();
+            updateAssignmentStats();
+        }
+
+        function renderTableListView() {
+            const container = document.getElementById('tableListView');
+            
+            if (!container) {
+                console.error('tableListView container not found!');
+                return;
+            }
+
+            console.log('Rendering table list. Tables:', tables.length, 'Guests:', guests.length);
+
+            let html = '';
+
+            if (tables.length === 0) {
+                html = '<div style="color: var(--text-light); text-align: center; padding: 20px; font-style: italic;">No tables created yet.<br><br>Go to "Design Floor Plan" to add tables.</div>';
+            } else {
+                tables.forEach(table => {
+                    const tableNumber = tables.findIndex(t => t.id === table.id) + 1;
+                    const assignedGuests = guests.filter(g => g.tableId === table.id);
+                    
+                    console.log(`Table ${tableNumber}: ${assignedGuests.length} guests assigned`, assignedGuests.map(g => g.name));
+                    
+                    html += `
+                        <div class="table-list-item">
+                            <div class="table-list-header">
+                                <span>Table ${tableNumber}</span>
+                                <span style="font-size: 14px; color: var(--text-secondary);">${assignedGuests.length}/${table.seats}</span>
+                            </div>
+                            <div class="table-list-guests">
+                    `;
+
+                    if (assignedGuests.length === 0) {
+                        html += `<div class="table-list-empty">No guests assigned yet</div>`;
+                    } else {
+                        assignedGuests.forEach(guest => {
+                            const vipBadge = guest.vip ? ' <span style="background: gold; color: black; padding: 1px 4px; border-radius: 2px; font-size: 9px;">VIP</span>' : '';
+                            const coupleBadge = guest.coupleId ? ` <span style="background: #e91e63; color: white; padding: 1px 4px; border-radius: 2px; font-size: 9px;">💑${guest.coupleId}</span>` : '';
+                            const plusOneBadge = guest.plusOne ? ' <span style="background: #9c27b0; color: white; padding: 1px 4px; border-radius: 2px; font-size: 9px;">+1</span>' : '';
+                            
+                            html += `<div class="table-list-guest ${guest.category}" title="${guest.notes || ''}">${guest.name}${vipBadge}${coupleBadge}${plusOneBadge}</div>`;
+                        });
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+            console.log('Table list rendered successfully');
+        }
+
+        function renderUnassignedGuests() {
+            const container = document.getElementById('unassignedGuestsList');
+            const unassigned = guests.filter(g => g.tableId === null);
+            
+            const ageIcons = {
+                'child': '👶',
+                'teen': '🧒',
+                'adult': '👤',
+                'senior': '👴'
+            };
+            
+            container.innerHTML = unassigned.map(guest => {
+                const vipBadge = guest.vip ? '<span style="background: gold; color: black; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">⭐VIP</span>' : '';
+                const coupleBadge = guest.coupleId ? `<span style="background: #e91e63; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">💑 ${guest.coupleId}</span>` : '';
+                const plusOneBadge = guest.plusOne ? '<span style="background: #9c27b0; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 5px;">+1</span>' : '';
+                const ageBadge = guest.age ? `<span title="${guest.age}" style="margin-left: 5px;">${ageIcons[guest.age] || ''}</span>` : '';
+                const notesPreview = guest.notes ? `<div style="font-size: 11px; color: var(--text-secondary); margin-top: 3px;">📝 ${guest.notes.substring(0, 30)}${guest.notes.length > 30 ? '...' : ''}</div>` : '';
+                
+                return `
+                    <div class="guest-card ${guest.category}" draggable="true" data-guest-id="${guest.id}" title="${guest.notes || ''}">
+                        <div>${guest.name}${ageBadge}${vipBadge}${coupleBadge}${plusOneBadge}</div>
+                        ${notesPreview}
+                    </div>
+                `;
+            }).join('');
+
+            container.querySelectorAll('.guest-card').forEach(card => {
+                card.addEventListener('dragstart', handleGuestDragStart);
+                card.addEventListener('dragend', handleGuestDragEnd);
+            });
+        }
+
+        function handleGuestDragStart(e) {
+            draggedGuest = e.target.dataset.guestId;
+            e.target.classList.add('dragging');
+        }
+
+        function handleGuestDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e, tableId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+
+            const table = tables.find(t => t.id === tableId);
+            const guest = guests.find(g => g.id === draggedGuest);
+
+            if (!table || !guest) return;
+
+            // Check if table is full
+            const currentGuests = guests.filter(g => g.tableId === tableId);
+            if (currentGuests.length >= table.seats && guest.tableId !== tableId) {
+                alert(`Table ${tables.indexOf(table) + 1} is full!`);
+                return;
+            }
+
+            // Assign guest to table
+            guest.tableId = tableId;
+            renderAssignmentView();
+        }
+
+        // Allow dropping on unassigned area
+        document.getElementById('unassignedGuestsList').addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        document.getElementById('unassignedGuestsList').addEventListener('drop', (e) => {
+            e.preventDefault();
+            const guest = guests.find(g => g.id === draggedGuest);
+            if (guest) {
+                guest.tableId = null;
+                renderAssignmentView();
+            }
+        });
+
+        function updateAssignmentStats() {
+            const assigned = guests.filter(g => g.tableId !== null).length;
+            document.getElementById('totalGuestsStat').textContent = guests.length;
+            document.getElementById('assignedGuestsStat').textContent = assigned;
+            document.getElementById('unassignedGuestsStat').textContent = guests.length - assigned;
+        }
+
+        function autoAssignGuests() {
+            if (tables.length === 0) {
+                alert('Please add tables first in the "Design Floor Plan" tab!');
+                return;
+            }
+
+            // Reset all assignments
+            guests.forEach(g => g.tableId = null);
+
+            // Get active categories in display order (priority order)
+            const categoryBadges = Array.from(document.querySelectorAll('.category-badge.active'));
+            const activeCategoryIds = categoryBadges.map(badge => badge.dataset.cat);
+
+            if (activeCategoryIds.length === 0) {
+                alert('Please activate at least one category!');
+                return;
+            }
+
+            // Group guests by couples
+            const coupleGroups = {};
+            const singles = [];
+            
+            guests.forEach(guest => {
+                if (guest.coupleId && guest.coupleId.trim()) {
+                    if (!coupleGroups[guest.coupleId]) {
+                        coupleGroups[guest.coupleId] = [];
+                    }
+                    coupleGroups[guest.coupleId].push(guest);
+                } else {
+                    singles.push(guest);
+                }
+            });
+
+            // Create seating units (couples as units, singles individually)
+            const seatingUnits = [];
+            
+            // Add couples as units
+            Object.values(coupleGroups).forEach(couple => {
+                seatingUnits.push({
+                    guests: couple,
+                    size: couple.length + couple.filter(g => g.plusOne).length,
+                    isCouple: true,
+                    vip: couple.some(g => g.vip),
+                    age: couple[0].age || 'adult',
+                    category: couple[0].category
+                });
+            });
+
+            // Add singles
+            singles.forEach(guest => {
+                seatingUnits.push({
+                    guests: [guest],
+                    size: 1 + (guest.plusOne ? 1 : 0),
+                    isCouple: false,
+                    vip: guest.vip,
+                    age: guest.age || 'adult',
+                    category: guest.category
+                });
+            });
+
+            // Sort seating units by priority:
+            // 1. VIPs first
+            // 2. Then by category order (as displayed)
+            // 3. Then couples before singles
+            // 4. Then by age
+            seatingUnits.sort((a, b) => {
+                // VIPs first
+                if (a.vip !== b.vip) return b.vip - a.vip;
+                
+                // Then by category priority order
+                const catIndexA = activeCategoryIds.indexOf(a.category);
+                const catIndexB = activeCategoryIds.indexOf(b.category);
+                if (catIndexA !== catIndexB) {
+                    // If category not in active list, put at end
+                    if (catIndexA === -1) return 1;
+                    if (catIndexB === -1) return -1;
+                    return catIndexA - catIndexB;
+                }
+                
+                // Then couples before singles
+                if (a.isCouple !== b.isCouple) return b.isCouple - a.isCouple;
+                
+                // Then by age group (kids, teen, adult, senior)
+                const ageOrder = { 'child': 0, 'teen': 1, 'adult': 2, 'senior': 3, '': 2 };
+                return ageOrder[a.age] - ageOrder[b.age];
+            });
+
+            // Track table fill status
+            const tableFill = tables.map(table => ({
+                id: table.id,
+                seats: table.seats,
+                filled: 0,
+                ages: [],
+                categories: []
+            }));
+
+            // Assign seating units to tables
+            seatingUnits.forEach(unit => {
+                // Filter out units from inactive categories
+                if (!activeCategoryIds.includes(unit.category)) {
+                    return;
+                }
+
+                // Try to find best table for this unit
+                let bestTableIndex = -1;
+                
+                for (let i = 0; i < tableFill.length; i++) {
+                    const table = tableFill[i];
+                    
+                    // Check if unit fits
+                    if (table.filled + unit.size <= table.seats) {
+                        // Prefer tables with similar ages
+                        const hasMatchingAge = table.ages.includes(unit.age);
+                        const hasMatchingCategory = table.categories.includes(unit.category);
+                        
+                        // First available table, or better match
+                        if (bestTableIndex === -1 || hasMatchingAge || hasMatchingCategory) {
+                            bestTableIndex = i;
+                            
+                            // If perfect match (same age and category), stop searching
+                            if (hasMatchingAge && hasMatchingCategory) break;
+                        }
+                    }
+                }
+
+                // Assign to best table found
+                if (bestTableIndex !== -1) {
+                    const table = tableFill[bestTableIndex];
+                    unit.guests.forEach(guest => {
+                        guest.tableId = table.id;
+                    });
+                    table.filled += unit.size;
+                    table.ages.push(unit.age);
+                    table.categories.push(unit.category);
+                }
+            });
+
+            // Check if all guests were assigned
+            const unassigned = guests.filter(g => g.tableId === null);
+            if (unassigned.length > 0) {
+                alert(`Auto-assign complete! ${unassigned.length} guest(s) couldn't be seated (not enough space or inactive category). You can assign them manually.`);
+            } else {
+                alert('Auto-assign complete! All guests have been seated.');
+            }
+
+            renderAssignmentView();
+        }
+
+        function clearAllAssignments() {
+            if (confirm('Clear all seat assignments?')) {
+                guests.forEach(g => g.tableId = null);
+                renderAssignmentView();
+            }
+        }
+
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            // Update button text and icon
+            document.getElementById('darkModeIcon').textContent = isDarkMode ? '☀️' : '🌙';
+            document.getElementById('darkModeText').textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
+            
+            // Save preference
+            localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
+        }
+
+        // Load dark mode preference on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== WEDDING PLANNER LOADED ===');
+            console.log('Version: 2.0 - Updated Jan 2025');
+            console.log('Guests:', guests.length);
+            console.log('Tables:', tables.length);
+            
+            const darkModePreference = localStorage.getItem('darkMode');
+            if (darkModePreference === 'enabled') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeIcon').textContent = '☀️';
+                document.getElementById('darkModeText').textContent = 'Light Mode';
+            }
+            
+            console.log('Page initialization complete');
+        });
+
+        // Save and Load Functions
+        function saveToFile() {
+            const data = {
+                guests: guests,
+                tables: tables,
+                customCategories: customCategories,
+                customFields: customFields,
+                savedDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'wedding-seating-plan-' + new Date().toISOString().split('T')[0] + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function loadFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    guests = data.guests || [];
+                    tables = data.tables || [];
+                    customCategories = data.customCategories || [];
+                    customFields = data.customFields || [];
+                    
+                    // Restore custom categories to the UI
+                    const categoryList = document.getElementById('categoryList');
+                    customCategories.forEach(cat => {
+                        const badge = document.createElement('span');
+                        badge.className = 'category-badge' + (cat.active !== false ? ' active' : '');
+                        badge.style.background = cat.color;
+                        badge.style.color = 'white';
+                        badge.dataset.cat = cat.id;
+                        badge.draggable = true;
+                        badge.onclick = function() { toggleCategory(this); };
+                        badge.title = 'Click to toggle, drag to reorder';
+                        badge.innerHTML = `<span class="cat-status"></span> ${cat.name}`;
+                        categoryList.appendChild(badge);
+                        
+                        // Set up drag handlers
+                        setupCategoryDragHandlers(badge);
+                    });
+                    
+                    // Restore custom fields to the UI
+                    const columnBadges = document.getElementById('columnBadges');
+                    customFields.forEach(field => {
+                        const badge = document.createElement('span');
+                        badge.className = 'column-badge active custom-field-badge';
+                        badge.dataset.column = field.id;
+                        badge.draggable = true;
+                        badge.onclick = function() { toggleColumn(this); };
+                        badge.title = 'Click to toggle, drag to reorder';
+                        badge.innerHTML = `
+                            <span class="col-status"></span>${field.label}
+                            <button onclick="removeCustomField('${field.id}', event)" style="margin-left: 8px; background: rgba(255,255,255,0.3); border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; font-size: 12px; line-height: 1; padding: 0;" title="Delete field">×</button>
+                        `;
+                        columnBadges.appendChild(badge);
+                        
+                        // Set up drag handlers
+                        setupColumnDragHandlers(badge);
+                    });
+                    
+                    // Re-render everything
+                    const canvas = document.getElementById('floorPlanCanvas');
+                    canvas.innerHTML = '';
+                    tables.forEach(table => renderTable(table));
+                    updateStats();
+                    
+                    // Update guest inputs if on tab 1
+                    const guestInputs = document.getElementById('guestInputs');
+                    guestInputs.innerHTML = '';
+                    
+                    const activeColumns = getActiveColumns();
+                    const columnConfig = getColumnConfig();
+                    
+                    // Build grid template
+                    let gridTemplate = '2fr 1.5fr'; // Name and Category always visible
+                    activeColumns.forEach(col => {
+                        gridTemplate += ' ' + columnConfig[col].width;
+                    });
+                    gridTemplate += ' 80px'; // Delete button
+                    
+                    guests.forEach(guest => {
+                        const row = document.createElement('div');
+                        row.className = 'guest-row';
+                        row.style.cssText = 'display: grid; grid-template-columns: ' + gridTemplate + '; gap: 8px; margin-bottom: 10px; align-items: center;';
+                        
+                        row.innerHTML = buildGuestRowHTML(guest, activeColumns);
+                        guestInputs.appendChild(row);
+                        
+                        // Set the category value after adding to DOM
+                        row.querySelector('.guest-category').value = guest.category;
+                    });
+                    
+                    alert('Seating plan loaded successfully!');
+                    if (tables.length > 0) {
+                        switchTab(1); // Go to floor plan view
+                    }
+                } catch (error) {
+                    alert('Error loading file. Please make sure it\'s a valid seating plan file.');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+            
+            // Reset file input
+            event.target.value = '';
+        }
+
+        // Export as Image Function
+        function exportAsImage() {
+            const canvas = document.getElementById('assignmentCanvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            // Create a temporary canvas
+            const tempCanvas = document.createElement('canvas');
+            const ctx = tempCanvas.getContext('2d');
+            
+            // Set canvas size to match the visible area
+            const scale = 2; // Higher resolution
+            tempCanvas.width = canvasRect.width * scale;
+            tempCanvas.height = canvasRect.height * scale;
+            
+            // Scale context for higher resolution
+            ctx.scale(scale, scale);
+            
+            // Fill background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvasRect.width, canvasRect.height);
+            
+            // Draw grid
+            ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvasRect.width; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvasRect.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvasRect.height; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvasRect.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw each table
+            tables.forEach(table => {
+                const tableNumber = tables.indexOf(table) + 1;
+                const assignedGuests = guests.filter(g => g.tableId === table.id);
+                
+                // Draw table background
+                ctx.fillStyle = '#fff5f5';
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 3;
+                
+                if (table.shape === 'round') {
+                    ctx.beginPath();
+                    ctx.arc(table.x + table.width/2, table.y + table.height/2, table.width/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    if (table.shape === 'round') {
+                        ctx.beginPath();
+                        ctx.arc(table.x + table.width/2, table.y + table.height/2, table.width/2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.fillRect(table.x, table.y, table.width, table.height);
+                        ctx.strokeRect(table.x, table.y, table.width, table.height);
+                    }
+                }
+                
+                // Draw table label
+                ctx.fillStyle = '#667eea';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Table ${tableNumber}`, table.x + table.width/2, table.y + 20);
+                
+                // Draw capacity
+                ctx.fillStyle = '#666';
+                ctx.font = '12px sans-serif';
+                ctx.fillText(`${assignedGuests.length}/${table.seats}`, table.x + table.width/2, table.y + 35);
+                
+                // Draw guests
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'left';
+                assignedGuests.forEach((guest, index) => {
+                    const y = table.y + 50 + (index * 14);
+                    if (y < table.y + table.height - 5) {
+                        // Color indicator
+                        const colors = {
+                            'family': '#fdcb6e',
+                            'close-friends': '#74b9ff',
+                            'friends': '#a29bfe',
+                            'colleagues': '#fd79a8',
+                            'other': '#b2bec3'
+                        };
+                        ctx.fillStyle = colors[guest.category] || '#b2bec3';
+                        ctx.fillRect(table.x + 10, y - 10, 3, 12);
+                        
+                        // Guest name
+                        ctx.fillStyle = '#333';
+                        const maxWidth = table.width - 25;
+                        let name = guest.name;
+                        if (ctx.measureText(name).width > maxWidth) {
+                            while (ctx.measureText(name + '...').width > maxWidth && name.length > 0) {
+                                name = name.slice(0, -1);
+                            }
+                            name += '...';
+                        }
+                        ctx.fillText(name, table.x + 18, y);
+                    }
+                });
+            });
+            
+            // Add title at the top
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Wedding Seating Plan', canvasRect.width / 2, 30);
+            
+            // Convert to image and download
+            tempCanvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'wedding-seating-plan-' + new Date().toISOString().split('T')[0] + '.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+    </script>
+    <!-- Copyright Notice -->
+    <div style="position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(128, 128, 128, 0.6); text-align: center; pointer-events: none; z-index: 1;">
+        © 2025 chrisincyber • Open Source on GitHub
+    </div>
+
+</body>
+</html>
