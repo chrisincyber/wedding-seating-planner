@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wedding Seating Planner - Floor Plan Designer</title>
+    <!-- SheetJS library for Excel import/export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -761,6 +763,26 @@
 
             <div class="form-group">
                 <label>Add Guests:</label>
+
+                <!-- Excel Import/Export Section -->
+                <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 2px dashed var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 200px;">
+                            <h4 style="margin: 0 0 5px 0; font-size: 14px; color: var(--text-primary);">📊 Import from Excel</h4>
+                            <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Download the template, fill in your guest list, then upload it back.</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="btn-secondary" onclick="downloadExcelTemplate()" style="padding: 10px 15px; font-size: 13px;">
+                                ⬇️ Download Template
+                            </button>
+                            <button class="btn-secondary" onclick="document.getElementById('excelUpload').click()" style="padding: 10px 15px; font-size: 13px;">
+                                ⬆️ Upload Excel
+                            </button>
+                            <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" style="display: none;" onchange="uploadExcelFile(event)">
+                        </div>
+                    </div>
+                </div>
+
                 <div id="guestTableHeader" style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
                     <!-- Header will be generated dynamically -->
                 </div>
@@ -2121,6 +2143,356 @@
             
             // Reset file input
             event.target.value = '';
+        }
+
+        // Excel Template Download Function
+        function downloadExcelTemplate() {
+            // Get all active columns to include in template
+            const activeColumns = getActiveColumns();
+            const columnConfig = getColumnConfig();
+
+            // Build header row
+            const headers = ['Name', 'Category'];
+            activeColumns.forEach(col => {
+                headers.push(columnConfig[col].label);
+            });
+
+            // Get all available categories for the instructions
+            const defaultCategories = ['Family', 'Close Friends', 'Friends', 'Colleagues', 'Other'];
+            const customCatNames = customCategories.map(c => c.name);
+            const allCategories = [...defaultCategories, ...customCatNames];
+
+            // Create data rows with example data
+            const exampleData = [
+                headers,
+                ['John Smith', 'Family', ...activeColumns.map(col => {
+                    const config = columnConfig[col];
+                    if (col === 'age') return 'Adult';
+                    if (col === 'coupleId') return 'C1';
+                    if (config.type === 'checkbox') return 'Yes';
+                    if (col === 'notes') return 'Best man';
+                    if (config.type === 'select' && config.options.length > 0) return config.options[0];
+                    return '';
+                })],
+                ['Jane Smith', 'Family', ...activeColumns.map(col => {
+                    const config = columnConfig[col];
+                    if (col === 'age') return 'Adult';
+                    if (col === 'coupleId') return 'C1';
+                    if (config.type === 'checkbox') return '';
+                    if (col === 'notes') return 'Maid of honor';
+                    if (config.type === 'select' && config.options.length > 0) return config.options[0];
+                    return '';
+                })],
+                ['Mike Johnson', 'Close Friends', ...activeColumns.map(col => {
+                    const config = columnConfig[col];
+                    if (col === 'age') return 'Adult';
+                    if (col === 'coupleId') return '';
+                    if (col === 'plusOne') return 'Yes';
+                    if (col === 'vip') return 'Yes';
+                    if (config.type === 'checkbox') return '';
+                    if (col === 'notes') return 'Bringing +1';
+                    return '';
+                })],
+                [], // Empty row
+                ['--- INSTRUCTIONS ---', '', ...activeColumns.map(() => '')],
+                ['Delete the example rows above and add your guests', '', ...activeColumns.map(() => '')],
+                ['', '', ...activeColumns.map(() => '')],
+                ['CATEGORY OPTIONS:', allCategories.join(', '), ...activeColumns.map(() => '')],
+                ['(You can also add new custom categories - they will be created automatically)', '', ...activeColumns.map(() => '')]
+            ];
+
+            // Add field-specific instructions
+            activeColumns.forEach((col, index) => {
+                const config = columnConfig[col];
+                let instruction = '';
+
+                if (col === 'age') {
+                    instruction = 'AGE OPTIONS: Kid, Teen, Adult, Senior';
+                } else if (config.type === 'checkbox') {
+                    instruction = `${config.label.toUpperCase()}: Use "Yes", "Y", "1", "TRUE", or "X" to mark as checked`;
+                } else if (config.type === 'select' && config.options.length > 0) {
+                    instruction = `${config.label.toUpperCase()} OPTIONS: ${config.options.join(', ')}`;
+                } else if (col === 'coupleId') {
+                    instruction = 'COUPLE ID: Use same ID (C1, C2, etc.) to keep couples together';
+                }
+
+                if (instruction) {
+                    const row = ['', '', ...activeColumns.map(() => '')];
+                    row[0] = instruction;
+                    exampleData.push(row);
+                }
+            });
+
+            // Create workbook and worksheet
+            const ws = XLSX.utils.aoa_to_sheet(exampleData);
+
+            // Set column widths
+            const colWidths = [{ wch: 25 }, { wch: 15 }];
+            activeColumns.forEach(col => {
+                const config = columnConfig[col];
+                if (col === 'notes' || config.type === 'text') {
+                    colWidths.push({ wch: 30 });
+                } else if (config.type === 'checkbox') {
+                    colWidths.push({ wch: 8 });
+                } else {
+                    colWidths.push({ wch: 15 });
+                }
+            });
+            ws['!cols'] = colWidths;
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Guest List');
+
+            // Download
+            XLSX.writeFile(wb, 'wedding-guest-template.xlsx');
+        }
+
+        // Excel Upload Function
+        function uploadExcelFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    // Get first sheet
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+
+                    // Convert to JSON
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (jsonData.length < 2) {
+                        alert('The Excel file appears to be empty or only has headers.');
+                        return;
+                    }
+
+                    // Process the data
+                    processExcelData(jsonData);
+
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    alert('Error reading Excel file. Please make sure it\'s a valid .xlsx, .xls, or .csv file.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+
+            // Reset file input
+            event.target.value = '';
+        }
+
+        function processExcelData(jsonData) {
+            const headers = jsonData[0];
+            if (!headers || headers.length < 2) {
+                alert('Invalid file format. Please use the template.');
+                return;
+            }
+
+            // Map header names to column indices
+            const headerMap = {};
+            headers.forEach((header, index) => {
+                if (header) {
+                    headerMap[header.toString().toLowerCase().trim()] = index;
+                }
+            });
+
+            // Find name and category columns
+            const nameIndex = headerMap['name'] ?? headerMap['guest name'] ?? headerMap['guest'] ?? 0;
+            const categoryIndex = headerMap['category'] ?? headerMap['group'] ?? 1;
+
+            // Map active columns to their indices
+            const activeColumns = getActiveColumns();
+            const columnConfig = getColumnConfig();
+            const columnIndices = {};
+
+            activeColumns.forEach(col => {
+                const config = columnConfig[col];
+                const label = config.label.toLowerCase();
+
+                // Try to find matching header
+                for (const [headerName, index] of Object.entries(headerMap)) {
+                    if (headerName === label ||
+                        headerName === col.toLowerCase() ||
+                        headerName.includes(label) ||
+                        label.includes(headerName)) {
+                        columnIndices[col] = index;
+                        break;
+                    }
+                }
+            });
+
+            // Category name to ID mapping
+            const categoryNameToId = {
+                'family': 'family',
+                'close friends': 'close-friends',
+                'closefriends': 'close-friends',
+                'friends': 'friends',
+                'colleagues': 'colleagues',
+                'coworkers': 'colleagues',
+                'work': 'colleagues',
+                'other': 'other',
+                'others': 'other'
+            };
+
+            // Add custom categories to the mapping
+            customCategories.forEach(cat => {
+                categoryNameToId[cat.name.toLowerCase()] = cat.id;
+            });
+
+            // Track new custom categories that need to be created
+            const newCategories = new Set();
+
+            // Process data rows
+            let addedCount = 0;
+            let skippedCount = 0;
+
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length === 0) continue;
+
+                const name = row[nameIndex]?.toString().trim();
+
+                // Skip empty rows and instruction rows
+                if (!name || name.startsWith('---') || name.startsWith('CATEGORY') ||
+                    name.startsWith('Delete the') || name.toLowerCase().includes('instruction') ||
+                    name.toLowerCase().includes('options:')) {
+                    continue;
+                }
+
+                // Get category
+                let categoryValue = row[categoryIndex]?.toString().trim() || 'other';
+                let categoryId = categoryNameToId[categoryValue.toLowerCase()];
+
+                // If category not found, create a new custom category
+                if (!categoryId) {
+                    categoryId = categoryValue.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                    if (!newCategories.has(categoryValue)) {
+                        newCategories.add(categoryValue);
+                    }
+                    categoryNameToId[categoryValue.toLowerCase()] = categoryId;
+                }
+
+                // Build guest data
+                const guestData = {
+                    name: name,
+                    category: categoryId
+                };
+
+                // Process additional columns
+                activeColumns.forEach(col => {
+                    const config = columnConfig[col];
+                    const colIndex = columnIndices[col];
+
+                    if (colIndex !== undefined) {
+                        let value = row[colIndex];
+
+                        if (value !== undefined && value !== null) {
+                            value = value.toString().trim();
+
+                            if (col === 'age') {
+                                // Map age values
+                                const ageMap = {
+                                    'kid': 'child', 'child': 'child', 'kids': 'child', 'children': 'child',
+                                    'teen': 'teen', 'teenager': 'teen', 'teens': 'teen',
+                                    'adult': 'adult', 'adults': 'adult',
+                                    'senior': 'senior', 'seniors': 'senior', 'elderly': 'senior'
+                                };
+                                guestData[col] = ageMap[value.toLowerCase()] || '';
+                            } else if (config.type === 'checkbox') {
+                                // Parse checkbox values
+                                const trueValues = ['yes', 'y', '1', 'true', 'x', 'checked', '✓', '✔'];
+                                guestData[col] = trueValues.includes(value.toLowerCase());
+                            } else {
+                                guestData[col] = value;
+                            }
+                        }
+                    }
+                });
+
+                // Add guest row to the UI
+                addGuestRowWithData(guestData);
+                addedCount++;
+            }
+
+            // Create new custom categories
+            newCategories.forEach(catName => {
+                const catId = catName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+                // Check if category already exists
+                if (!customCategories.find(c => c.id === catId)) {
+                    // Generate a color
+                    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6c5ce7', '#a29bfe', '#fd79a8', '#fdcb6e', '#00b894', '#e17055'];
+                    const color = colors[customCategories.length % colors.length];
+
+                    customCategories.push({ id: catId, name: catName, color: color, active: true });
+
+                    // Add to category list display
+                    const categoryList = document.getElementById('categoryList');
+                    const badge = document.createElement('span');
+                    badge.className = 'category-badge active';
+                    badge.style.background = color;
+                    badge.style.color = 'white';
+                    badge.dataset.cat = catId;
+                    badge.draggable = true;
+                    badge.onclick = function() { toggleCategory(this); };
+                    badge.title = 'Click to toggle, drag to reorder';
+                    badge.innerHTML = `<span class="cat-status"></span> ${catName}`;
+                    categoryList.appendChild(badge);
+
+                    // Set up drag handlers
+                    setupCategoryDragHandlers(badge);
+                }
+            });
+
+            // Update all category dropdowns
+            updateCategoryDropdowns();
+
+            // Show result
+            let message = `Successfully imported ${addedCount} guest(s)!`;
+            if (newCategories.size > 0) {
+                message += `\n\nNew custom categories created: ${Array.from(newCategories).join(', ')}`;
+            }
+            if (skippedCount > 0) {
+                message += `\n\n${skippedCount} row(s) were skipped (empty or invalid).`;
+            }
+            alert(message);
+        }
+
+        function addGuestRowWithData(data) {
+            const container = document.getElementById('guestInputs');
+            const activeColumns = getActiveColumns();
+            const columnConfig = getColumnConfig();
+
+            // Build grid template
+            let gridTemplate = '2fr 1.5fr'; // Name and Category always visible
+            activeColumns.forEach(col => {
+                gridTemplate += ' ' + columnConfig[col].width;
+            });
+            gridTemplate += ' 80px'; // Delete button
+
+            const row = document.createElement('div');
+            row.className = 'guest-row';
+            row.style.cssText = 'display: grid; grid-template-columns: ' + gridTemplate + '; gap: 8px; margin-bottom: 10px; align-items: center;';
+
+            row.innerHTML = buildGuestRowHTML(data, activeColumns);
+            container.appendChild(row);
+
+            // Set the category value after adding to DOM
+            const categorySelect = row.querySelector('.guest-category');
+            if (categorySelect) {
+                // Check if the option exists, if not add it
+                const optionExists = Array.from(categorySelect.options).some(opt => opt.value === data.category);
+                if (!optionExists && data.category) {
+                    const option = document.createElement('option');
+                    option.value = data.category;
+                    option.textContent = data.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    categorySelect.appendChild(option);
+                }
+                categorySelect.value = data.category || 'family';
+            }
         }
 
         // Export as Image Function
